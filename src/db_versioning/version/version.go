@@ -9,26 +9,36 @@ import (
 	"strings"
 )
 
-func Compare(firstVersion string, secondVersion string) int {
-	if isFormatValid(firstVersion) || isFormatValid(secondVersion) {
-		panic(fmt.Sprintf("Error incompatible version format : %s / %s", firstVersion, secondVersion))
-	}
+type Version struct {
+	VersionNumbers []VersionNumber
+}
 
-	firstSplittedVersion := strings.Split(firstVersion, ".")
-	secondSplittedVersion := strings.Split(secondVersion, ".")
-	for i := 0; i < len(firstSplittedVersion); i++ {
-		if firstSplittedVersion[i] > secondSplittedVersion[i] {
+func (version Version) Compare(versionToCompare Version) int {
+	for index, versionNumber := range version.VersionNumbers {
+		if versionNumber.isGreaterThan(versionToCompare.VersionNumbers[index]) {
 			return 1
-		} else if firstSplittedVersion[i] < secondSplittedVersion[i] {
+		} else if versionNumber.isLowerThan(versionToCompare.VersionNumbers[index]) {
 			return -1
 		}
 	}
 	return 0
 }
 
-func isFormatValid(version string) bool {
-	valid, err := regexp.MatchString("^\\d.\\d.\\d$", version)
-	return !valid || err != nil
+type VersionNumber string
+
+func (versionNumber VersionNumber) isGreaterThan(version VersionNumber) bool {
+	return versionNumber > version
+}
+
+func (versionNumber VersionNumber) isLowerThan(version VersionNumber) bool {
+	return versionNumber < version
+}
+
+func Compare(firstVersion string, secondVersion string) int {
+	validateVersions(firstVersion, secondVersion)
+	firstSplittedVersion, secondSplittedVersion := split(firstVersion, secondVersion)
+
+	return firstSplittedVersion.Compare(secondSplittedVersion)
 }
 
 func GetCurrentVersion() string {
@@ -42,4 +52,29 @@ func GetCurrentVersion() string {
 		log.Fatalf("Query failed : %s", err.Error())
 	}
 	return versionRow.Str(0)
+}
+
+func split(firstVersion string, secondVersion string) (Version, Version) {
+	return convertToVersionNumbers(strings.Split(firstVersion, ".")), convertToVersionNumbers(strings.Split(secondVersion, "."))
+}
+
+func convertToVersionNumbers(version []string) Version {
+	var versionNumber []VersionNumber
+	for _, number := range version {
+		versionNumber = append(versionNumber, VersionNumber(number))
+	}
+	return Version{versionNumber}
+}
+
+func validateVersions(versions ...string) {
+	for _, version := range versions {
+		if isFormatValid(version) {
+			panic(fmt.Sprintf("Error incompatible version format : %s", version))
+		}
+	}
+}
+
+func isFormatValid(version string) bool {
+	valid, err := regexp.MatchString("^\\d.\\d.\\d$", version)
+	return !valid || err != nil
 }
