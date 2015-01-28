@@ -2,6 +2,7 @@ package migration
 
 import (
 	"bytes"
+	"db_versioning/version"
 	"io/ioutil"
 	"log"
 	"strings"
@@ -19,7 +20,7 @@ func Migrate(schemaPath string) {
 	folders, _ := ioutil.ReadDir(schemaPath)
 	var scripts []Script
 	for _, folder := range folders {
-		if folder.IsDir() {
+		if folder.IsDir() && version.Compare(folder.Name(), version.GetCurrentVersion()) == 1 {
 			files, _ := ioutil.ReadDir(computePath(schemaPath, folder.Name()))
 			for _, file := range files {
 				if strings.HasSuffix(file.Name(), ".sql") {
@@ -60,12 +61,12 @@ func executeScripts(scripts []Script, db mysql.Conn) {
 		for _, query := range script.Queries {
 			if !isEmptyString(query) {
 				_, _, err := db.Query(query)
-				upgradeDBVersion(script.Version, script.Path, db)
 				if err != nil {
 					log.Fatalf("Error when executing script : %s", err.Error())
 				}
 			}
 		}
+		upgradeDBVersion(script.Version, script.Path, db)
 	}
 }
 
