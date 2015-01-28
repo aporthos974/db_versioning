@@ -1,10 +1,11 @@
 package version
 
 import (
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/ziutek/mymysql/mysql"
 	_ "github.com/ziutek/mymysql/native"
-	"testing"
 )
 
 func TestCanGetCurrentDBVersion(test *testing.T) {

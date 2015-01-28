@@ -2,11 +2,12 @@ package version
 
 import (
 	"fmt"
-	"github.com/ziutek/mymysql/mysql"
-	_ "github.com/ziutek/mymysql/native" // Native engine
 	"log"
 	"regexp"
 	"strings"
+
+	"github.com/ziutek/mymysql/mysql"
+	_ "github.com/ziutek/mymysql/native"
 )
 
 type Version struct {

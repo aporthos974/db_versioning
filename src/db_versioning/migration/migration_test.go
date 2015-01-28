@@ -2,11 +2,12 @@ package migration
 
 import (
 	"db_versioning/version"
+	"strings"
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/ziutek/mymysql/mysql"
 	_ "github.com/ziutek/mymysql/native"
-	"strings"
-	"testing"
 )
 
 type Version struct {
