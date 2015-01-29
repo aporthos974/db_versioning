@@ -17,7 +17,7 @@ type Version struct {
 func TestCanApplyScript(test *testing.T) {
 	initDatabase("1.0.0")
 
-	Migrate("../db_versioning_test")
+	Migrate("../db_versioning_test_ok")
 
 	assert.Equal(test, "1.0.1", version.GetCurrentVersion())
 }
@@ -25,7 +25,7 @@ func TestCanApplyScript(test *testing.T) {
 func TestCanApplySeveralScripts(test *testing.T) {
 	initDatabase("0.0.0")
 
-	Migrate("../db_versioning_test")
+	Migrate("../db_versioning_test_ok")
 
 	versions := getVersions()
 	assert.Equal(test, "0.0.0", versions[0].Version)
@@ -37,7 +37,7 @@ func TestCanApplySeveralScripts(test *testing.T) {
 func TestCanApplySeveralScriptsFromVersion(test *testing.T) {
 	initDatabase("1.0.0")
 
-	Migrate("../db_versioning_test")
+	Migrate("../db_versioning_test_ok")
 
 	assert.Equal(test, "1.0.1", version.GetCurrentVersion())
 }
@@ -45,15 +45,29 @@ func TestCanApplySeveralScriptsFromVersion(test *testing.T) {
 func TestCanApplySeveralScriptsInTheSameVersion(test *testing.T) {
 	initDatabase("1.0.0")
 
-	Migrate("../db_versioning_test")
+	Migrate("../db_versioning_test_ok")
 
 	versions := getVersions()
 	assert.Equal(test, 3, len(versions))
 	assert.Equal(test, "1.0.0", versions[0].Version)
 	assert.Equal(test, "1.0.1", versions[1].Version)
-	assert.Equal(test, "../db_versioning_test/1.0.1/first.sql", versions[1].Script)
+	assert.Equal(test, "../db_versioning_test_ok/1.0.1/first.sql", versions[1].Script)
 	assert.Equal(test, "1.0.1", versions[2].Version)
-	assert.Equal(test, "../db_versioning_test/1.0.1/second.sql", versions[2].Script)
+	assert.Equal(test, "../db_versioning_test_ok/1.0.1/second.sql", versions[2].Script)
+	assert.Equal(test, "1.0.1", version.GetCurrentVersion())
+}
+
+func TestCanKnownScriptFailed(test *testing.T) {
+	initDatabase("0.0.0")
+
+	assert.Panics(test, func() { Migrate("../db_versioning_test_failed") }, "Calling Compare() should panic")
+
+	versions := getVersions()
+	assert.Equal(test, 3, len(versions))
+	assert.Equal(test, "0.0.0", versions[0].Version)
+	assert.Equal(test, "1.0.0", versions[1].Version)
+	assert.Equal(test, "1.0.1", versions[2].Version)
+	assert.Equal(test, "../db_versioning_test_failed/1.0.1/error.sql", versions[2].Script)
 	assert.Equal(test, "1.0.1", version.GetCurrentVersion())
 }
 

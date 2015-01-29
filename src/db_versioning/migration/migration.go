@@ -72,7 +72,7 @@ func computePath(basePath string, elementsPath ...string) string {
 func fetchQueries(scriptPath string) []Query {
 	content, err := ioutil.ReadFile(scriptPath)
 	if err != nil {
-		log.Fatalf("Error when openning file : %s", err.Error())
+		log.Panicf("Error when openning file : %s", err.Error())
 	}
 	var queries []Query
 	for _, query := range strings.Split(string(content), ";") {
@@ -89,23 +89,24 @@ func executeScripts(scripts []Script) {
 			if !query.isEmpty() {
 				_, _, err := db.Query(query.GetContent())
 				if err != nil {
-					log.Fatalf("Error when executing script : %s", err.Error())
+					upgradeDBVersion(script.Version, script.Path, fmt.Sprintf("failed : %s", err.Error()), db)
+					log.Panicf("Error when executing script : %s", err.Error())
 				}
 			}
 		}
-		upgradeDBVersion(script.Version, script.Path, db)
+		upgradeDBVersion(script.Version, script.Path, "ok", db)
 	}
 	db.Close()
 }
 
-func upgradeDBVersion(toVersion, scriptName string, db mysql.Conn) {
-	statement, err := db.Prepare("insert into db_version (script, version, state) values (?, ?, 'ok')")
+func upgradeDBVersion(toVersion, scriptName string, state string, db mysql.Conn) {
+	statement, err := db.Prepare("insert into db_version (script, version, state) values (?, ?, ?)")
 	if err != nil {
-		log.Fatalf("Error when preparing the update db_version : %s", err.Error())
+		log.Panicf("Error when preparing the update db_version : %s", err.Error())
 	}
 
-	_, err = statement.Run(scriptName, toVersion)
+	_, err = statement.Run(scriptName, toVersion, state)
 	if err != nil {
-		log.Fatalf("Error when updating db_version : %s", err.Error())
+		log.Panicf("Error when updating db_version : %s", err.Error())
 	}
 }

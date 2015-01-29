@@ -1,7 +1,6 @@
 package version
 
 import (
-	"fmt"
 	"log"
 	"regexp"
 	"strings"
@@ -46,11 +45,11 @@ func GetCurrentVersion() string {
 	db := mysql.New("tcp", "", "127.0.0.1:3306", "test", "test", "db_versioning_test")
 	err := db.Connect()
 	if err != nil {
-		log.Fatalf("Connection failed : %s", err.Error())
+		log.Panicf("Connection failed : %s", err.Error())
 	}
 	versionRow, _, err := db.QueryFirst("select version from db_version order by id desc limit 1")
 	if err != nil {
-		log.Fatalf("Query failed : %s", err.Error())
+		log.Panicf("Query failed : %s", err.Error())
 	}
 	return versionRow.Str(0)
 }
@@ -70,7 +69,7 @@ func convertToVersionNumbers(version []string) Version {
 func validateVersions(versions ...string) {
 	for _, version := range versions {
 		if isFormatValid(version) {
-			panic(fmt.Sprintf("Error incompatible version format : %s", version))
+			log.Panicf("Error incompatible version format : %s", version)
 		}
 	}
 }
