@@ -1,6 +1,7 @@
 package initialisation
 
 import (
+	db_utils "db_versioning/db"
 	"github.com/stretchr/testify/assert"
 	"strings"
 	"testing"
@@ -22,24 +23,20 @@ func TestCanInitWhenTableDBVersionDoesntExist(test *testing.T) {
 
 	Initialize()
 
-	assert.Equal(test, 1, len(getVersions()))
-	assert.Equal(test, "0.0.0", getVersions()[0].Version)
-	assert.Equal(test, "initialisation", getVersions()[0].Script)
+	versions := db_utils.GetVersions()
+	assert.Equal(test, 1, len(versions))
+	assert.Equal(test, "0.0.0", versions[0].Version)
+	assert.Equal(test, "initialisation", versions[0].Script)
 }
 
 func TestDoesntInitWhenTableDBVersionExists(test *testing.T) {
-	db := mysql.New("tcp", "", "127.0.0.1:3306", "test", "test", "db_versioning_test")
-	db.Connect()
-	dropAllTables(db)
-	db.Query("create table db_version (id INTEGER PRIMARY KEY AUTO_INCREMENT , script VARCHAR(255), version VARCHAR(255), state VARCHAR(255))")
-	db.Query("insert into db_version (script, version, state) values ('initialisation', '0.0.0', 'ok')")
-	db.Query("drop table db_version")
-	db.Close()
+	db_utils.InitDatabase("0.0.0")
 
 	Initialize()
 
-	assert.Equal(test, 1, len(getVersions()))
-	assert.Equal(test, "0.0.0", getVersions()[0].Version)
+	versions := db_utils.GetVersions()
+	assert.Equal(test, 1, len(versions))
+	assert.Equal(test, "0.0.0", versions[0].Version)
 }
 
 func dropAllTables(db mysql.Conn) {
@@ -50,16 +47,4 @@ func dropAllTables(db mysql.Conn) {
 	}
 	concatenateTables := strings.Join(tables, ", ")
 	db.Query("drop table " + concatenateTables)
-}
-
-func getVersions() []Version {
-	db := mysql.New("tcp", "", "127.0.0.1:3306", "test", "test", "db_versioning_test")
-	db.Connect()
-	rows, _, _ := db.Query("select version, script from db_version order by id")
-	db.Close()
-	var versions []Version
-	for _, row := range rows {
-		versions = append(versions, Version{Version: row.Str(0), Script: row.Str(1)})
-	}
-	return versions
 }

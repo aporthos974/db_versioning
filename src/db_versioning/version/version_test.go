@@ -1,7 +1,7 @@
 package version
 
 import (
-	"strings"
+	"db_versioning/db"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -10,12 +10,12 @@ import (
 )
 
 func TestCanGetCurrentDBVersion(test *testing.T) {
+	db.InitDatabase("0.0.0")
 	db := mysql.New("tcp", "", "127.0.0.1:3306", "test", "test", "db_versioning_test")
 	db.Connect()
-	dropAllTables(db)
-	db.Query("create table db_version (id INTEGER PRIMARY KEY AUTO_INCREMENT , script VARCHAR(255), version VARCHAR(255), state VARCHAR(255))")
 	db.Query("insert into db_version (script, version, state) values ('test.sql', '1.0.0', 'ok')")
 	db.Query("insert into db_version (script, version, state) values ('test.sql', '1.0.1', 'ok')")
+	db.Close()
 
 	version := GetCurrentVersion()
 
@@ -59,14 +59,4 @@ func TestCanKnownSecondVersionFormatIsNotSupported(test *testing.T) {
 	compareFunction := func() { Compare("1.0.1", "1a.0.1") }
 
 	assert.Panics(test, compareFunction, "Calling Compare() should panic")
-}
-
-func dropAllTables(db mysql.Conn) {
-	rows, _, _ := db.Query("show tables")
-	var tables []string
-	for _, row := range rows {
-		tables = append(tables, row.Str(0))
-	}
-	concatenateTables := strings.Join(tables, ", ")
-	db.Query("drop table " + concatenateTables)
 }
