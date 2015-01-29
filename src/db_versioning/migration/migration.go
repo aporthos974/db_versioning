@@ -83,14 +83,17 @@ func fetchQueries(scriptPath string) []Query {
 
 func executeScripts(scripts []Script) {
 	db := mysql.New("tcp", "", "127.0.0.1:3306", "test", "test", "db_versioning_test")
-	db.Connect()
+	err := db.Connect()
+	if err != nil {
+		log.Panicf("Connection failed : %s", err.Error())
+	}
 	for _, script := range scripts {
 		for _, query := range script.Queries {
 			if !query.isEmpty() {
 				_, _, err := db.Query(query.GetContent())
 				if err != nil {
 					upgradeDBVersion(script.Version, script.Path, fmt.Sprintf("failed : %s", err.Error()), db)
-					log.Panicf("Error when executing script : %s", err.Error())
+					log.Panicf("Error while executing script : %s", err.Error())
 				}
 			}
 		}
@@ -102,11 +105,11 @@ func executeScripts(scripts []Script) {
 func upgradeDBVersion(toVersion, scriptName string, state string, db mysql.Conn) {
 	statement, err := db.Prepare("insert into db_version (script, version, state) values (?, ?, ?)")
 	if err != nil {
-		log.Panicf("Error when preparing the update db_version : %s", err.Error())
+		log.Panicf("Error while preparing the update db_version : %s", err.Error())
 	}
 
 	_, err = statement.Run(scriptName, toVersion, state)
 	if err != nil {
-		log.Panicf("Error when updating db_version : %s", err.Error())
+		log.Panicf("Error while updating db_version : %s", err.Error())
 	}
 }

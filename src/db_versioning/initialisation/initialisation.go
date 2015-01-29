@@ -9,11 +9,14 @@ import (
 
 func Initialize() {
 	db := mysql.New("tcp", "", "127.0.0.1:3306", "test", "test", "db_versioning_test")
-	db.Connect()
+	err := db.Connect()
+	if err != nil {
+		log.Panicf("Error while connecting to database : %s", err.Error())
+	}
 
 	row, _, err := db.QueryFirst("show tables like 'db_version'")
 	if err != nil {
-		log.Panicf("Error while fetching if table db_version exists")
+		log.Panicf("Error while fetching db_version : %s", err.Error())
 	}
 	if row == nil {
 		db.Query("create table db_version (id INTEGER PRIMARY KEY AUTO_INCREMENT , script VARCHAR(255), version VARCHAR(255), state VARCHAR(255))")
