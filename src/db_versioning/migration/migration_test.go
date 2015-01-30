@@ -13,7 +13,7 @@ func TestCanApplyScript(test *testing.T) {
 
 	Migrate("db_versioning_test")
 
-	assert.Equal(test, "1.0.1", version.GetCurrentVersion())
+	assert.Equal(test, "1.0.1", version.GetCurrentVersion("db_versioning_test"))
 }
 
 func TestCanApplySeveralScripts(test *testing.T) {
@@ -25,7 +25,7 @@ func TestCanApplySeveralScripts(test *testing.T) {
 	assert.Equal(test, "0.0.1", versions[0].Version)
 	assert.Equal(test, "1.0.0", versions[1].Version)
 	assert.Equal(test, "1.0.1", versions[2].Version)
-	assert.Equal(test, "1.0.1", version.GetCurrentVersion())
+	assert.Equal(test, "1.0.1", version.GetCurrentVersion("db_versioning_test"))
 }
 
 func TestCanApplySeveralScriptsFromVersion(test *testing.T) {
@@ -33,7 +33,7 @@ func TestCanApplySeveralScriptsFromVersion(test *testing.T) {
 
 	Migrate("db_versioning_test")
 
-	assert.Equal(test, "1.0.1", version.GetCurrentVersion())
+	assert.Equal(test, "1.0.1", version.GetCurrentVersion("db_versioning_test"))
 }
 
 func TestCanApplySeveralScriptsInTheSameVersion(test *testing.T) {
@@ -45,10 +45,10 @@ func TestCanApplySeveralScriptsInTheSameVersion(test *testing.T) {
 	assert.Equal(test, 3, len(versions))
 	assert.Equal(test, "1.0.0", versions[0].Version)
 	assert.Equal(test, "1.0.1", versions[1].Version)
-	assert.Equal(test, "../db_versioning_test/1.0.1/first.sql", versions[1].Script)
+	assert.Equal(test, "db_versioning_test/1.0.1/first.sql", versions[1].Script)
 	assert.Equal(test, "1.0.1", versions[2].Version)
-	assert.Equal(test, "../db_versioning_test/1.0.1/second.sql", versions[2].Script)
-	assert.Equal(test, "1.0.1", version.GetCurrentVersion())
+	assert.Equal(test, "db_versioning_test/1.0.1/second.sql", versions[2].Script)
+	assert.Equal(test, "1.0.1", version.GetCurrentVersion("db_versioning_test"))
 }
 
 func TestCanKnownSchemaIsAlreadyUpToDate(test *testing.T) {
@@ -59,7 +59,7 @@ func TestCanKnownSchemaIsAlreadyUpToDate(test *testing.T) {
 	versions := db.GetVersions()
 	assert.Equal(test, 1, len(versions))
 	assert.Equal(test, "1.0.1", versions[0].Version)
-	assert.Equal(test, "1.0.1", version.GetCurrentVersion())
+	assert.Equal(test, "1.0.1", version.GetCurrentVersion("db_versioning_test"))
 }
 
 func TestCanKnownScriptFailed(test *testing.T) {
@@ -71,6 +71,6 @@ func TestCanKnownScriptFailed(test *testing.T) {
 	assert.Equal(test, 2, len(versions))
 	assert.Equal(test, "0.0.0", versions[0].Version)
 	assert.Equal(test, "0.0.1", versions[1].Version)
-	assert.Equal(test, "../db_versioning_test/0.0.1/failed.sql", versions[1].Script)
-	assert.Equal(test, "0.0.1", version.GetCurrentVersion())
+	assert.Equal(test, "db_versioning_test/0.0.1/failed.sql", versions[1].Script)
+	assert.Equal(test, "0.0.1", version.GetCurrentVersion("db_versioning_test"))
 }

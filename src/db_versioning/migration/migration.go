@@ -29,25 +29,26 @@ func (query Query) GetContent() string {
 }
 
 func Migrate(schema string) {
-	scripts := fetchMigrationScripts("../" + schema)
+	scripts := fetchMigrationScripts(schema)
 	if len(scripts) == 0 {
-		fmt.Printf("Schema is already up-to-dateUS")
+		fmt.Printf("Schema is already up-to-date \n")
 		return
 	}
-	executeScripts(scripts)
+	executeScripts(scripts, schema)
 	fmt.Printf("Database schema '%s' updated \n", schema)
 }
 
-func fetchMigrationScripts(schemaPath string) []Script {
-	folders, _ := ioutil.ReadDir(schemaPath)
+func fetchMigrationScripts(schema string) []Script {
+	folders, _ := ioutil.ReadDir(schema)
 	var scripts []Script
+	currentVersion := version.GetCurrentVersion(schema)
 	for _, folder := range folders {
-		if isEligibleFolder(folder) {
-			files, _ := ioutil.ReadDir(computePath(schemaPath, folder.Name()))
+		if isEligibleFolder(folder, currentVersion) {
+			files, _ := ioutil.ReadDir(computePath(schema, folder.Name()))
 			for _, file := range files {
 				if strings.HasSuffix(file.Name(), ".sql") {
-					queries := fetchQueries(computePath(schemaPath, folder.Name(), file.Name()))
-					scriptPath := computePath(schemaPath, folder.Name(), file.Name())
+					queries := fetchQueries(computePath(schema, folder.Name(), file.Name()))
+					scriptPath := computePath(schema, folder.Name(), file.Name())
 					scripts = append(scripts, createScript(scriptPath, folder, queries))
 				}
 			}
@@ -60,8 +61,8 @@ func createScript(scriptPath string, folder os.FileInfo, queries []Query) Script
 	return Script{Path: scriptPath, Version: folder.Name(), Queries: queries}
 }
 
-func isEligibleFolder(folder os.FileInfo) bool {
-	return folder.IsDir() && version.Compare(folder.Name(), version.GetCurrentVersion()) == 1
+func isEligibleFolder(folder os.FileInfo, currentVersion string) bool {
+	return folder.IsDir() && version.Compare(folder.Name(), currentVersion) == 1
 }
 
 func computePath(basePath string, elementsPath ...string) string {
@@ -86,8 +87,8 @@ func fetchQueries(scriptPath string) []Query {
 	return queries
 }
 
-func executeScripts(scripts []Script) {
-	db := mysql.New("tcp", "", "127.0.0.1:3306", "test", "test", "db_versioning_test")
+func executeScripts(scripts []Script, schema string) {
+	db := mysql.New("tcp", "", "127.0.0.1:3306", "test", "test", schema)
 	err := db.Connect()
 	if err != nil {
 		log.Panicf("Connection failed : %s \n", err.Error())
@@ -102,6 +103,7 @@ func executeScripts(scripts []Script) {
 				}
 			}
 		}
+		fmt.Printf("executed : %s \n", script.Path)
 		upgradeDBVersion(script.Version, script.Path, "ok", db)
 	}
 	db.Close()

@@ -1,6 +1,7 @@
 package initialisation
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/ziutek/mymysql/mysql"
@@ -23,5 +24,5 @@ func Initialize(schema string) {
 		db.Query("insert into db_version (script, version, state) values ('initialisation', '0.0.0', 'ok')")
 	}
 	db.Close()
-	log.Printf("Database schema '%s' version initialized \n", schema)
+	fmt.Printf("Database schema version initialized for '%s' \n", schema)
 }

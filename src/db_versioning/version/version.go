@@ -41,8 +41,8 @@ func Compare(firstVersion string, secondVersion string) int {
 	return firstSplittedVersion.Compare(secondSplittedVersion)
 }
 
-func GetCurrentVersion() string {
-	db := mysql.New("tcp", "", "127.0.0.1:3306", "test", "test", "db_versioning_test")
+func GetCurrentVersion(schema string) string {
+	db := mysql.New("tcp", "", "127.0.0.1:3306", "test", "test", schema)
 	err := db.Connect()
 	if err != nil {
 		log.Panicf("Connection failed : %s \n", err.Error())

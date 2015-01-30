@@ -16,22 +16,22 @@ func main() {
 
 	flag.Visit(func(f *flag.Flag) {
 		schema := flag.Arg(0)
-		if f.Name == "i" && initialize {
+		if f.Name == "i" && *initialize {
 			initialisation.Initialize(schema)
-		} else if f.Name == "v" && displayVersion {
-			fmt.Printf("current version : %s \n", version.GetCurrentVersion())
-		} else if f.Name == "u" && upgrade {
+		} else if f.Name == "v" && *displayVersion {
+			fmt.Printf("current version : %s \n", version.GetCurrentVersion(schema))
+		} else if f.Name == "u" && *upgrade {
 			migration.Migrate(schema)
 		}
 	})
 }
 
-func initArgsAndFlags() (bool, bool, bool) {
+func initArgsAndFlags() (*bool, *bool, *bool) {
 	var initialize, upgrade, displayVersion bool
 	flag.BoolVar(&initialize, "i", false, "Initialize versioning system for database schema")
 	flag.BoolVar(&upgrade, "u", false, "Upgrade database schema")
 	flag.BoolVar(&displayVersion, "v", false, "Display database schema version")
-	return initialize, upgrade, displayVersion
+	return &initialize, &upgrade, &displayVersion
 }
 
 func checkParameters() {
