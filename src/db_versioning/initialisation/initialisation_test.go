@@ -21,7 +21,7 @@ func TestCanInitWhenTableDBVersionDoesntExist(test *testing.T) {
 	db.Query("drop table db_version")
 	db.Close()
 
-	Initialize()
+	Initialize("db_versioning_test")
 
 	versions := db_utils.GetVersions()
 	assert.Equal(test, 1, len(versions))
@@ -32,7 +32,7 @@ func TestCanInitWhenTableDBVersionDoesntExist(test *testing.T) {
 func TestDoesntInitWhenTableDBVersionExists(test *testing.T) {
 	db_utils.InitDatabase("0.0.0")
 
-	Initialize()
+	Initialize("db_versioning_test")
 
 	versions := db_utils.GetVersions()
 	assert.Equal(test, 1, len(versions))

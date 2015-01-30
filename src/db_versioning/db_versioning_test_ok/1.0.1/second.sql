@@ -1,1 +1,0 @@
-insert into test_table values ('second_id_value', 'second_label_value');

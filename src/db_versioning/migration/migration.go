@@ -28,9 +28,14 @@ func (query Query) GetContent() string {
 	return fmt.Sprint(query)
 }
 
-func Migrate(schemaPath string) {
-	scripts := fetchMigrationScripts(schemaPath)
+func Migrate(schema string) {
+	scripts := fetchMigrationScripts("../" + schema)
+	if len(scripts) == 0 {
+		fmt.Printf("Schema is already up-to-dateUS")
+		return
+	}
 	executeScripts(scripts)
+	fmt.Printf("Database schema '%s' updated \n", schema)
 }
 
 func fetchMigrationScripts(schemaPath string) []Script {
@@ -72,7 +77,7 @@ func computePath(basePath string, elementsPath ...string) string {
 func fetchQueries(scriptPath string) []Query {
 	content, err := ioutil.ReadFile(scriptPath)
 	if err != nil {
-		log.Panicf("Error when openning file : %s", err.Error())
+		log.Panicf("Error when openning file : %s \n", err.Error())
 	}
 	var queries []Query
 	for _, query := range strings.Split(string(content), ";") {
@@ -85,7 +90,7 @@ func executeScripts(scripts []Script) {
 	db := mysql.New("tcp", "", "127.0.0.1:3306", "test", "test", "db_versioning_test")
 	err := db.Connect()
 	if err != nil {
-		log.Panicf("Connection failed : %s", err.Error())
+		log.Panicf("Connection failed : %s \n", err.Error())
 	}
 	for _, script := range scripts {
 		for _, query := range script.Queries {
@@ -93,7 +98,7 @@ func executeScripts(scripts []Script) {
 				_, _, err := db.Query(query.GetContent())
 				if err != nil {
 					upgradeDBVersion(script.Version, script.Path, fmt.Sprintf("failed : %s", err.Error()), db)
-					log.Panicf("Error while executing script : %s", err.Error())
+					log.Panicf("Error while executing script : %s \n", err.Error())
 				}
 			}
 		}
@@ -105,11 +110,11 @@ func executeScripts(scripts []Script) {
 func upgradeDBVersion(toVersion, scriptName string, state string, db mysql.Conn) {
 	statement, err := db.Prepare("insert into db_version (script, version, state) values (?, ?, ?)")
 	if err != nil {
-		log.Panicf("Error while preparing the update db_version : %s", err.Error())
+		log.Panicf("Error while preparing the update db_version : %s \n", err.Error())
 	}
 
 	_, err = statement.Run(scriptName, toVersion, state)
 	if err != nil {
-		log.Panicf("Error while updating db_version : %s", err.Error())
+		log.Panicf("Error while updating db_version : %s \n", err.Error())
 	}
 }
