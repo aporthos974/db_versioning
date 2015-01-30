@@ -16,11 +16,15 @@ func main() {
 
 	flag.Visit(func(f *flag.Flag) {
 		schema := flag.Arg(0)
+		fmt.Printf("_______________________________________________ \n")
 		if f.Name == "i" && *initialize {
+			fmt.Printf("\nInitialize database schema version... \n")
 			initialisation.Initialize(schema)
 		} else if f.Name == "v" && *displayVersion {
+			fmt.Printf("\nGet current version... \n")
 			fmt.Printf("current version : %s \n", version.GetCurrentVersion(schema))
 		} else if f.Name == "u" && *upgrade {
+			fmt.Printf("\nUpdate database... \n")
 			migration.Migrate(schema)
 		}
 	})

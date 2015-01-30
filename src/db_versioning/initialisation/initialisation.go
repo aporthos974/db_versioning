@@ -22,7 +22,9 @@ func Initialize(schema string) {
 	if row == nil {
 		db.Query("create table db_version (id INTEGER PRIMARY KEY AUTO_INCREMENT , script VARCHAR(255), version VARCHAR(255), state VARCHAR(255))")
 		db.Query("insert into db_version (script, version, state) values ('initialisation', '0.0.0', 'ok')")
+		fmt.Printf("Database schema version initialized for '%s' \n", schema)
+	} else {
+		fmt.Printf("Database schema version is already initialized for '%s' \n", schema)
 	}
 	db.Close()
-	fmt.Printf("Database schema version initialized for '%s' \n", schema)
 }
