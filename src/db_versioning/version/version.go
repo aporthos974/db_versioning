@@ -80,6 +80,6 @@ func validateVersions(versions ...string) {
 }
 
 func isFormatValid(version string) bool {
-	valid, err := regexp.MatchString("^\\d.\\d.\\d$", version)
+	valid, err := regexp.MatchString("^\\d+.\\d+.\\d+$", version)
 	return !valid || err != nil
 }

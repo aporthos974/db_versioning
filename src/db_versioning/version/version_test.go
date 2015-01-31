@@ -24,7 +24,7 @@ func TestCanGetCurrentDBVersion(test *testing.T) {
 
 func TestCanKnownFirstVersionIsGreaterToSecondVersion(test *testing.T) {
 
-	compare := Compare("1.1.1", "1.0.0")
+	compare := Compare("10.10.10", "1.0.0")
 
 	assert.Equal(test, 1, compare)
 }
