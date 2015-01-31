@@ -17,7 +17,7 @@ func TestCanGetCurrentDBVersion(test *testing.T) {
 	db.Query("insert into db_version (script, version, state) values ('test.sql', '1.0.1', 'ok')")
 	db.Close()
 
-	version := GetCurrentVersion()
+	version := GetCurrentVersion("db_versioning_test")
 
 	assert.Equal(test, "1.0.1", version)
 }

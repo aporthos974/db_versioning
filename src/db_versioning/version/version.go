@@ -1,6 +1,7 @@
 package version
 
 import (
+	"fmt"
 	"log"
 	"regexp"
 	"strings"
@@ -39,6 +40,10 @@ func Compare(firstVersion string, secondVersion string) int {
 	firstSplittedVersion, secondSplittedVersion := split(firstVersion, secondVersion)
 
 	return firstSplittedVersion.Compare(secondSplittedVersion)
+}
+
+func DisplayCurrentVersion(schema string) {
+	fmt.Printf("Current version : %s \n", GetCurrentVersion(schema))
 }
 
 func GetCurrentVersion(schema string) string {

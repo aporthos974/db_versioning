@@ -22,7 +22,7 @@ func main() {
 			initialisation.Initialize(schema)
 		} else if f.Name == "v" && *displayVersion {
 			fmt.Printf("\nGet current version... \n")
-			fmt.Printf("current version : %s \n", version.GetCurrentVersion(schema))
+			version.DisplayCurrentVersion(schema)
 		} else if f.Name == "u" && *upgrade {
 			fmt.Printf("\nUpdate database... \n")
 			migration.Migrate(schema)
