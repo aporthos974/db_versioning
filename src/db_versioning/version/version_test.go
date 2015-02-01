@@ -22,6 +22,15 @@ func TestCanGetCurrentDBVersion(test *testing.T) {
 	assert.Equal(test, "1.0.1", version)
 }
 
+func TestCanSortVersions(test *testing.T) {
+	versions := []string{"10.0.0", "1.0.10", "1.0.1", "1.0.2", "1.20.0", "1.2.1"}
+
+	sortedVersions := Sort(versions)
+
+	expected := []string{"1.0.1", "1.0.2", "1.0.10", "1.2.1", "1.20.0", "10.0.0"}
+	assert.Equal(test, expected, sortedVersions)
+}
+
 func TestCanKnownFirstVersionIsGreaterToSecondVersion(test *testing.T) {
 
 	compare := Compare("10.10.10", "1.0.0")

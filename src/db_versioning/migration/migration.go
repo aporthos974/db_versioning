@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"sort"
 	"strings"
 
 	"github.com/ziutek/mymysql/mysql"
@@ -40,6 +41,7 @@ func Migrate(schema string) {
 
 func fetchMigrationScripts(schema string) []Script {
 	folders, _ := ioutil.ReadDir(schema)
+	folders = sortFolders(folders)
 	var scripts []Script
 	currentVersion := version.GetCurrentVersion(schema)
 	for _, folder := range folders {
@@ -55,6 +57,26 @@ func fetchMigrationScripts(schema string) []Script {
 		}
 	}
 	return scripts
+}
+
+type FolderSort []os.FileInfo
+
+func (folderSort FolderSort) Less(i, j int) bool {
+	firstFolderSort, secondFolderSort := version.ConvertToVersionNumbers(folderSort[i].Name()), version.ConvertToVersionNumbers(folderSort[j].Name())
+	return firstFolderSort.IsLowerThan(secondFolderSort)
+}
+
+func (folderSort FolderSort) Swap(i, j int) {
+	folderSort[i], folderSort[j] = folderSort[j], folderSort[i]
+}
+
+func (folderSort FolderSort) Len() int {
+	return len(folderSort)
+}
+
+func sortFolders(folders []os.FileInfo) []os.FileInfo {
+	sort.Sort(FolderSort(folders))
+	return folders
 }
 
 func createScript(scriptPath string, folder os.FileInfo, queries []Query) Script {
