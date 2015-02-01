@@ -41,7 +41,7 @@ func Migrate(schema string) {
 
 func fetchMigrationScripts(schema string) []Script {
 	folders, _ := ioutil.ReadDir(schema)
-	folders = sortFolders(folders)
+	folders = sortDescFolders(folders)
 	var scripts []Script
 	currentVersion := version.GetCurrentVersion(schema)
 	for _, folder := range folders {
@@ -56,27 +56,17 @@ func fetchMigrationScripts(schema string) []Script {
 			}
 		}
 	}
-	return scripts
+	return sortAscScripts(scripts)
 }
 
-type FolderSort []os.FileInfo
-
-func (folderSort FolderSort) Less(i, j int) bool {
-	firstFolderSort, secondFolderSort := version.ConvertToVersionNumbers(folderSort[i].Name()), version.ConvertToVersionNumbers(folderSort[j].Name())
-	return firstFolderSort.IsLowerThan(secondFolderSort)
-}
-
-func (folderSort FolderSort) Swap(i, j int) {
-	folderSort[i], folderSort[j] = folderSort[j], folderSort[i]
-}
-
-func (folderSort FolderSort) Len() int {
-	return len(folderSort)
-}
-
-func sortFolders(folders []os.FileInfo) []os.FileInfo {
-	sort.Sort(FolderSort(folders))
+func sortDescFolders(folders []os.FileInfo) []os.FileInfo {
+	sort.Sort(sort.Reverse(FolderSort(folders)))
 	return folders
+}
+
+func sortAscScripts(scripts []Script) []Script {
+	sort.Sort(ScriptSort(scripts))
+	return scripts
 }
 
 func createScript(scriptPath string, folder os.FileInfo, queries []Query) Script {
@@ -113,7 +103,7 @@ func executeScripts(scripts []Script, schema string) {
 	db := mysql.New("tcp", "", "127.0.0.1:3306", "test", "test", schema)
 	err := db.Connect()
 	if err != nil {
-		log.Panicf("Connection failed : %s \n", err.Error())
+		log.Fatalf("Connection failed : %s \n", err.Error())
 	}
 	for _, script := range scripts {
 		for _, query := range script.Queries {
