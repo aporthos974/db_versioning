@@ -45,7 +45,7 @@ func TestCanApplySeveralScriptsInTheSameVersion(test *testing.T) {
 	Migrate("db_versioning_test")
 
 	versions := db.GetVersions()
-	assert.Equal(test, 5, len(versions))
+	assert.Len(test, versions, 5)
 	assert.Equal(test, "1.0.0", versions[0].Version)
 	assert.Equal(test, "1.0.1", versions[1].Version)
 	assert.Equal(test, "db_versioning_test/1.0.1/first.sql", versions[1].Script)
@@ -62,7 +62,7 @@ func TestCanKnownSchemaIsAlreadyUpToDate(test *testing.T) {
 	Migrate("db_versioning_test")
 
 	versions := db.GetVersions()
-	assert.Equal(test, 3, len(versions))
+	assert.Len(test, versions, 3)
 	assert.Equal(test, "1.0.1", versions[0].Version)
 	assert.Equal(test, "1.0.2", versions[1].Version)
 	assert.Equal(test, "1.0.10", versions[2].Version)
@@ -75,7 +75,7 @@ func TestCanApplyScriptsInGoodOrder(test *testing.T) {
 	Migrate("db_versioning_test")
 
 	versions := db.GetVersions()
-	assert.Equal(test, 5, len(versions))
+	assert.Len(test, versions, 5)
 	assert.Equal(test, "1.0.0", versions[0].Version)
 	assert.Equal(test, "1.0.1", versions[1].Version)
 	assert.Equal(test, "1.0.1", versions[2].Version)
@@ -84,15 +84,13 @@ func TestCanApplyScriptsInGoodOrder(test *testing.T) {
 	assert.Equal(test, "1.0.10", version.GetCurrentVersion("db_versioning_test"))
 }
 
-func TestCanKnownScriptFailed(test *testing.T) {
-	db.InitDatabase("0.0.0")
+func TestMigrationDoesntLaunchWhenMigrationWasAlreadyFailed(test *testing.T) {
+	db.InitDatabaseVersion("1.0.0", "failed")
+	executeQuery("insert into db_version (script, version, state) values ('test.sql', '0.0.0', 'ok')", "db_versioning_test")
 
-	assert.Panics(test, func() { Migrate("db_versioning_test") }, "Calling Compare() should panic")
+	Migrate("db_versioning_test")
 
 	versions := db.GetVersions()
-	assert.Equal(test, 2, len(versions))
-	assert.Equal(test, "0.0.0", versions[0].Version)
-	assert.Equal(test, "0.0.1", versions[1].Version)
-	assert.Equal(test, "db_versioning_test/0.0.1/failed.sql", versions[1].Script)
-	assert.Equal(test, "0.0.1", version.GetCurrentVersion("db_versioning_test"))
+	assert.Len(test, versions, 2)
+	assert.Equal(test, "0.0.0", version.GetCurrentVersion("db_versioning_test"))
 }

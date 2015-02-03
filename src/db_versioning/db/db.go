@@ -1,21 +1,41 @@
 package db
 
 import (
+	"fmt"
 	"github.com/ziutek/mymysql/mysql"
 	_ "github.com/ziutek/mymysql/native"
 	"strings"
 )
+
+type Script struct {
+	Path, Version string
+	Queries       []Query
+}
+
+type Query string
+
+func (query Query) IsEmpty() bool {
+	return strings.TrimSpace(query.GetContent()) == ""
+}
+
+func (query Query) GetContent() string {
+	return fmt.Sprint(query)
+}
 
 type Version struct {
 	Version, Script string
 }
 
 func InitDatabase(targetVersion string) {
+	InitDatabaseVersion(targetVersion, "ok")
+}
+
+func InitDatabaseVersion(targetVersion string, state string) {
 	db := mysql.New("tcp", "", "127.0.0.1:3306", "test", "test", "db_versioning_test")
 	db.Connect()
 	dropAllTables(db)
 	db.Query("create table db_version (id INTEGER PRIMARY KEY AUTO_INCREMENT , script VARCHAR(255), version VARCHAR(255), state VARCHAR(255))")
-	db.Query("insert into db_version (script, version, state) values ('test.sql', '%s', 'ok')", targetVersion)
+	db.Query("insert into db_version (script, version, state) values ('test.sql', '%s', '%s')", targetVersion, state)
 	db.Close()
 }
 

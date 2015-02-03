@@ -43,7 +43,7 @@ func GetCurrentVersion(schema string) string {
 	if err != nil {
 		log.Panicf("Connection failed : %s \n", err.Error())
 	}
-	versionRow, _, err := db.QueryFirst("select version from db_version order by id desc limit 1")
+	versionRow, _, err := db.QueryFirst("select version from db_version where state = 'ok' order by id desc limit 1")
 	if err != nil {
 		log.Panicf("Query failed : %s \n", err.Error())
 	}

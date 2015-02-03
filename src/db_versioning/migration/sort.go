@@ -1,13 +1,14 @@
 package migration
 
 import (
+	"db_versioning/db"
 	"db_versioning/version"
 	"os"
 )
 
 type FolderSort []os.FileInfo
 
-type ScriptSort []Script
+type ScriptSort []db.Script
 
 func (folderSort FolderSort) Less(i, j int) bool {
 	firstFolderSort, secondFolderSort := version.ConvertToVersionNumbers(folderSort[i].Name()), version.ConvertToVersionNumbers(folderSort[j].Name())

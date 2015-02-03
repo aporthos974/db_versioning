@@ -2,10 +2,11 @@ package migration
 
 import (
 	"bytes"
+	. "db_versioning/db"
+	. "db_versioning/log"
 	"db_versioning/version"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"sort"
 	"strings"
@@ -14,22 +15,11 @@ import (
 	_ "github.com/ziutek/mymysql/native"
 )
 
-type Script struct {
-	Path, Version string
-	Queries       []Query
-}
-
-type Query string
-
-func (query Query) isEmpty() bool {
-	return strings.TrimSpace(query.GetContent()) == ""
-}
-
-func (query Query) GetContent() string {
-	return fmt.Sprint(query)
-}
-
 func Migrate(schema string) {
+	if rows, _ := executeQuery("select count(*) from db_version where state <> 'ok'", schema); rows[0].Int(0) > 0 {
+		fmt.Printf("There is a script in error. Fix script, delete version in error in table 'db_version' and relaunch db_versioning command. \n")
+		return
+	}
 	scripts := fetchMigrationScripts(schema)
 	if len(scripts) == 0 {
 		fmt.Printf("Schema is already up-to-date \n")
@@ -37,6 +27,20 @@ func Migrate(schema string) {
 	}
 	executeScripts(scripts, schema)
 	fmt.Printf("Database schema '%s' updated \n", schema)
+}
+
+func executeQuery(query string, schema string) ([]mysql.Row, mysql.Result) {
+	db := mysql.New("tcp", "", "127.0.0.1:3306", "test", "test", schema)
+	err := db.Connect()
+	if err != nil {
+		Fail("Connection failed : %s \n", err.Error())
+	}
+	rows, result, err := db.Query(query)
+	db.Close()
+	if err != nil {
+		Fail("Query execution failed : %s \n", err.Error())
+	}
+	return rows, result
 }
 
 func fetchMigrationScripts(schema string) []Script {
@@ -90,7 +94,7 @@ func computePath(basePath string, elementsPath ...string) string {
 func fetchQueries(scriptPath string) []Query {
 	content, err := ioutil.ReadFile(scriptPath)
 	if err != nil {
-		log.Panicf("Error when openning file : %s \n", err.Error())
+		Fail("Error when openning file : %s \n", err.Error())
 	}
 	var queries []Query
 	for _, query := range strings.Split(string(content), ";") {
@@ -103,32 +107,19 @@ func executeScripts(scripts []Script, schema string) {
 	db := mysql.New("tcp", "", "127.0.0.1:3306", "test", "test", schema)
 	err := db.Connect()
 	if err != nil {
-		log.Fatalf("Connection failed : %s \n", err.Error())
+		Fail("Connection failed : %s \n", err.Error())
 	}
 	for _, script := range scripts {
 		for _, query := range script.Queries {
-			if !query.isEmpty() {
+			if !query.IsEmpty() {
 				_, _, err := db.Query(query.GetContent())
 				if err != nil {
-					upgradeDBVersion(script.Version, script.Path, fmt.Sprintf("failed : %s", err.Error()), db)
-					log.Panicf("Error while executing script : %s \n", err.Error())
+					FailAndLogInDatabase(db, script, "Error while executing script : %s \n", err)
 				}
 			}
 		}
 		fmt.Printf("executed : %s \n", script.Path)
-		upgradeDBVersion(script.Version, script.Path, "ok", db)
+		UpgradeDBVersion(script.Version, script.Path, "ok", db)
 	}
 	db.Close()
-}
-
-func upgradeDBVersion(toVersion, scriptName string, state string, db mysql.Conn) {
-	statement, err := db.Prepare("insert into db_version (script, version, state) values (?, ?, ?)")
-	if err != nil {
-		log.Panicf("Error while preparing the update db_version : %s \n", err.Error())
-	}
-
-	_, err = statement.Run(scriptName, toVersion, state)
-	if err != nil {
-		log.Panicf("Error while updating db_version : %s \n", err.Error())
-	}
 }
