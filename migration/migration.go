@@ -49,7 +49,10 @@ func fetchMigrationScripts(schema string) []Script {
 	var scripts []Script
 	currentVersion := version.GetCurrentVersion(schema)
 	for _, folder := range folders {
-		if isEligibleFolder(folder, currentVersion) {
+		if folder.IsDir() {
+			if !isEligibleFolder(folder, currentVersion) {
+				break
+			}
 			files, _ := ioutil.ReadDir(computePath(schema, folder.Name()))
 			var queries []Query
 			var scriptPaths []string
@@ -80,7 +83,7 @@ func createScript(scriptPaths []string, folder os.FileInfo, queries []Query) Scr
 }
 
 func isEligibleFolder(folder os.FileInfo, currentVersion string) bool {
-	return folder.IsDir() && version.Compare(folder.Name(), currentVersion) == 1
+	return version.Compare(folder.Name(), currentVersion) == 1
 }
 
 func computePath(basePath string, elementsPath ...string) string {
