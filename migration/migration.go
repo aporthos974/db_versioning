@@ -44,20 +44,17 @@ func executeQuery(query string, schema string) ([]mysql.Row, mysql.Result) {
 }
 
 func fetchMigrationScripts(schema string) []Script {
-	folders, _ := ioutil.ReadDir(schema)
-	folders = sortDescFolders(folders)
 	var scripts []Script
 	currentVersion := version.GetCurrentVersion(schema)
-	for _, folder := range folders {
+	for _, folder := range readVersionFolders(schema) {
 		if folder.IsDir() {
 			if !isEligibleFolder(folder, currentVersion) {
 				break
 			}
-			files, _ := ioutil.ReadDir(computePath(schema, folder.Name()))
 			var queries []Query
 			var scriptPaths []string
-			for _, file := range files {
-				if strings.HasSuffix(file.Name(), ".sql") {
+			for _, file := range readFilesInFolder(schema, folder) {
+				if isSQLType(file) {
 					queries = append(queries, fetchQueries(computePath(schema, folder.Name(), file.Name()))...)
 					scriptPaths = append(scriptPaths, computePath(schema, folder.Name(), file.Name()))
 				}
@@ -66,6 +63,26 @@ func fetchMigrationScripts(schema string) []Script {
 		}
 	}
 	return sortAscScripts(scripts)
+}
+
+func isSQLType(file os.FileInfo) bool {
+	return strings.HasSuffix(file.Name(), ".sql")
+}
+
+func readFilesInFolder(schema string, folder os.FileInfo) []os.FileInfo {
+	files, err := ioutil.ReadDir(computePath(schema, folder.Name()))
+	if err != nil {
+		Fail("Error while reading each files in folder : %s", err.Error())
+	}
+	return files
+}
+
+func readVersionFolders(schema string) []os.FileInfo {
+	folders, err := ioutil.ReadDir(schema)
+	if err != nil {
+		Fail("Error while reading version folder : %s", err.Error())
+	}
+	return sortDescFolders(folders)
 }
 
 func sortDescFolders(folders []os.FileInfo) []os.FileInfo {
