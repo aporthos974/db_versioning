@@ -12,7 +12,7 @@ import (
 	"strings"
 
 	"github.com/ziutek/mymysql/mysql"
-	_ "github.com/ziutek/mymysql/native"
+	_ "github.com/ziutek/mymysql/thrsafe"
 )
 
 func Migrate(schema string) {
@@ -51,13 +51,15 @@ func fetchMigrationScripts(schema string) []Script {
 	for _, folder := range folders {
 		if isEligibleFolder(folder, currentVersion) {
 			files, _ := ioutil.ReadDir(computePath(schema, folder.Name()))
+			var queries []Query
+			var scriptPaths []string
 			for _, file := range files {
 				if strings.HasSuffix(file.Name(), ".sql") {
-					queries := fetchQueries(computePath(schema, folder.Name(), file.Name()))
-					scriptPath := computePath(schema, folder.Name(), file.Name())
-					scripts = append(scripts, createScript(scriptPath, folder, queries))
+					queries = append(queries, fetchQueries(computePath(schema, folder.Name(), file.Name()))...)
+					scriptPaths = append(scriptPaths, computePath(schema, folder.Name(), file.Name()))
 				}
 			}
+			scripts = append(scripts, createScript(scriptPaths, folder, queries))
 		}
 	}
 	return sortAscScripts(scripts)
@@ -73,8 +75,8 @@ func sortAscScripts(scripts []Script) []Script {
 	return scripts
 }
 
-func createScript(scriptPath string, folder os.FileInfo, queries []Query) Script {
-	return Script{Path: scriptPath, Version: folder.Name(), Queries: queries}
+func createScript(scriptPaths []string, folder os.FileInfo, queries []Query) Script {
+	return Script{Paths: strings.Join(scriptPaths, ";"), Version: folder.Name(), Queries: queries}
 }
 
 func isEligibleFolder(folder os.FileInfo, currentVersion string) bool {
@@ -110,16 +112,22 @@ func executeScripts(scripts []Script, schema string) {
 		Fail("Connection failed : %s \n", err.Error())
 	}
 	for _, script := range scripts {
+		transaction, err := db.Begin()
+		if err != nil {
+			FailAndLogInDatabase(db, script, "Error while opening transaction : %s \n", err)
+		}
 		for _, query := range script.Queries {
 			if !query.IsEmpty() {
-				_, _, err := db.Query(query.GetContent())
+				_, _, err := transaction.Query(query.GetContent())
 				if err != nil {
+					transaction.Rollback()
 					FailAndLogInDatabase(db, script, "Error while executing script : %s \n", err)
 				}
 			}
 		}
-		fmt.Printf("executed : %s \n", script.Path)
-		UpgradeDBVersion(script.Version, script.Path, "ok", db)
+		transaction.Commit()
+		fmt.Printf("executed : %s \n", script.Paths)
+		UpgradeDBVersion(script.Version, script.Paths, "ok", db)
 	}
 	db.Close()
 }

@@ -8,8 +8,8 @@ import (
 )
 
 type Script struct {
-	Path, Version string
-	Queries       []Query
+	Paths, Version string
+	Queries        []Query
 }
 
 type Query string
