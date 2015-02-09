@@ -26,15 +26,18 @@ func main() {
 		} else if f.Name == "u" && *upgrade {
 			fmt.Printf("\nUpdate database... \n")
 			migration.Migrate(schema)
+			version.DisplayCurrentVersion(schema)
 		}
 	})
 }
 
 func initArgsAndFlags() (*bool, *bool, *bool) {
 	var initialize, upgrade, displayVersion bool
+	var environment string
 	flag.BoolVar(&initialize, "i", false, "Initialize versioning system for database schema")
 	flag.BoolVar(&upgrade, "u", false, "Upgrade database schema")
 	flag.BoolVar(&displayVersion, "v", false, "Display database schema version")
+	flag.StringVar(&environment, "host", "localhost", "Database environment (not implemented)")
 	return &initialize, &upgrade, &displayVersion
 }
 
