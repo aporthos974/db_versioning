@@ -1,19 +1,22 @@
 package migration
 
 import (
-	"bytes"
 	. "db_versioning/db"
 	. "db_versioning/log"
 	"db_versioning/version"
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
+	"runtime"
 	"sort"
 	"strings"
 
 	"github.com/ziutek/mymysql/mysql"
 	_ "github.com/ziutek/mymysql/thrsafe"
 )
+
+var EXECUTABLE_PATH = getExecutablePath()
 
 func Migrate(schema string) {
 	if rows, _ := executeQuery("select count(*) from db_version where state <> 'ok'", schema); rows[0].Int(0) > 0 {
@@ -46,17 +49,20 @@ func executeQuery(query string, schema string) ([]mysql.Row, mysql.Result) {
 func fetchMigrationScripts(schema string) []Script {
 	var scripts []Script
 	currentVersion := version.GetCurrentVersion(schema)
-	for _, folder := range readVersionFolders(schema) {
+	versionsDir := filepath.Join(EXECUTABLE_PATH, schema)
+	for _, folder := range readVersionFolders(versionsDir) {
+		versionDir := filepath.Join(versionsDir, folder.Name())
 		if folder.IsDir() {
 			if !isEligibleFolder(folder, currentVersion) {
 				break
 			}
 			var queries []Query
 			var scriptPaths []string
-			for _, file := range readFilesInFolder(schema, folder) {
+			for _, file := range readFilesInFolder(versionDir) {
 				if isSQLType(file) {
-					queries = append(queries, fetchQueries(computePath(schema, folder.Name(), file.Name()))...)
-					scriptPaths = append(scriptPaths, computePath(schema, folder.Name(), file.Name()))
+					sqlScriptPath := filepath.Join(versionDir, file.Name())
+					queries = append(queries, fetchQueries(sqlScriptPath)...)
+					scriptPaths = append(scriptPaths, filepath.Join(schema, folder.Name(), file.Name()))
 				}
 			}
 			scripts = append(scripts, createScript(scriptPaths, folder, queries))
@@ -69,18 +75,18 @@ func isSQLType(file os.FileInfo) bool {
 	return strings.HasSuffix(file.Name(), ".sql")
 }
 
-func readFilesInFolder(schema string, folder os.FileInfo) []os.FileInfo {
-	files, err := ioutil.ReadDir(computePath(schema, folder.Name()))
+func readFilesInFolder(versionDir string) []os.FileInfo {
+	files, err := ioutil.ReadDir(versionDir)
 	if err != nil {
 		Fail("Error while reading each files in folder : %s", err.Error())
 	}
 	return files
 }
 
-func readVersionFolders(schema string) []os.FileInfo {
-	folders, err := ioutil.ReadDir(schema)
+func readVersionFolders(versionsDir string) []os.FileInfo {
+	folders, err := ioutil.ReadDir(versionsDir)
 	if err != nil {
-		Fail("Error while reading version folder : %s", err.Error())
+		Fail("Error while reading version folder : %s \n", err.Error())
 	}
 	return sortDescFolders(folders)
 }
@@ -103,14 +109,9 @@ func isEligibleFolder(folder os.FileInfo, currentVersion string) bool {
 	return version.Compare(folder.Name(), currentVersion) == 1
 }
 
-func computePath(basePath string, elementsPath ...string) string {
-	var path bytes.Buffer
-	path.WriteString(basePath)
-	for _, element := range elementsPath {
-		path.WriteString("/")
-		path.WriteString(element)
-	}
-	return path.String()
+func getExecutablePath() string {
+	_, filename, _, _ := runtime.Caller(1)
+	return filepath.Join(filepath.Dir(filename), "..")
 }
 
 func fetchQueries(scriptPath string) []Query {
