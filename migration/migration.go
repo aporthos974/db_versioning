@@ -19,7 +19,7 @@ import (
 var EXECUTABLE_PATH = getExecutablePath()
 
 func Migrate(schema string) {
-	if rows, _ := executeQuery("select count(*) from db_version where state <> 'ok'", schema); rows[0].Int(0) > 0 {
+	if rows, _ := ExecuteQuery("select count(*) from db_version where state <> 'ok'", schema); rows[0].Int(0) > 0 {
 		fmt.Printf("There is a script in error. Fix script, delete version in error in table 'db_version' and relaunch db_versioning command. \n")
 		return
 	}
@@ -32,12 +32,30 @@ func Migrate(schema string) {
 	fmt.Printf("Database schema '%s' updated \n", schema)
 }
 
-func executeQuery(query string, schema string) ([]mysql.Row, mysql.Result) {
-	db := mysql.New("tcp", "", "127.0.0.1:3306", "test", "test", schema)
+func ExecuteQueries(schema string, queries ...string) (results []mysql.Result) {
+	db := openDBConnection("127.0.0.1:3306", "test", "test", schema)
+	for _, query := range queries {
+		_, result, err := db.Query(query)
+		if err != nil {
+			Fail("Query execution failed : %s \n", err.Error())
+		}
+		results = append(results, result)
+	}
+	db.Close()
+	return results
+}
+
+func openDBConnection(host string, login string, passwd string, schema string) mysql.Conn {
+	db := mysql.New("tcp", "", host, login, passwd, schema)
 	err := db.Connect()
 	if err != nil {
 		Fail("Connection failed : %s \n", err.Error())
 	}
+	return db
+}
+
+func ExecuteQuery(query string, schema string) ([]mysql.Row, mysql.Result) {
+	db := openDBConnection("127.0.0.1:3306", "test", "test", schema)
 	rows, result, err := db.Query(query)
 	db.Close()
 	if err != nil {
@@ -127,11 +145,7 @@ func fetchQueries(scriptPath string) []Query {
 }
 
 func executeScripts(scripts []Script, schema string) {
-	db := mysql.New("tcp", "", "127.0.0.1:3306", "test", "test", schema)
-	err := db.Connect()
-	if err != nil {
-		Fail("Connection failed : %s \n", err.Error())
-	}
+	db := openDBConnection("127.0.0.1:3306", "test", "test", schema)
 	for _, script := range scripts {
 		transaction, err := db.Begin()
 		if err != nil {

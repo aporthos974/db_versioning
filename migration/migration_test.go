@@ -82,7 +82,7 @@ func TestCanApplyScriptsInGoodOrder(test *testing.T) {
 
 func TestMigrationDoesntLaunchWhenMigrationWasAlreadyFailed(test *testing.T) {
 	db.InitDatabaseVersion("1.0.0", "failed")
-	executeQuery("insert into db_version (script, version, state) values ('test.sql', '0.0.0', 'ok')", "db_versioning_test")
+	ExecuteQuery("insert into db_version (script, version, state) values ('test.sql', '0.0.0', 'ok')", "db_versioning_test")
 
 	Migrate("db_versioning_test")
 
