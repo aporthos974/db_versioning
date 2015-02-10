@@ -1,4 +1,4 @@
-# db_versioning
+# DB Versioning
 
 DB Versioning permit to manage your database schema with a version system.
 This allows you to manipulate the database schema with a tracking queries executed during update.<br/>
@@ -20,9 +20,9 @@ Usage of ./db_versioning [option] <schema>
   -v=false: Display database schema version
 ```
 
-Directory
+Directory Example
 -----
-```bash
+```
 db_versioning
 schema_name/
 ├── 1.0.0
