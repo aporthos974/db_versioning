@@ -3,6 +3,7 @@ package main
 import (
 	"db_versioning/initialisation"
 	"db_versioning/migration"
+	"db_versioning/reinit"
 	"db_versioning/version"
 	"flag"
 	"fmt"
@@ -10,7 +11,7 @@ import (
 )
 
 func main() {
-	var initialize, upgrade, displayVersion = initArgsAndFlags()
+	var initialize, reinitialize, upgrade, displayVersion = initArgsAndFlags()
 
 	checkParameters()
 
@@ -24,21 +25,25 @@ func main() {
 			fmt.Printf("\nGet current version... \n")
 			version.DisplayCurrentVersion(schema)
 		} else if f.Name == "u" && *upgrade {
-			fmt.Printf("\nUpdate database... \n")
+			fmt.Printf("\nUpdate database schema... \n")
 			migration.Migrate(schema)
 			version.DisplayCurrentVersion(schema)
+		} else if f.Name == "I" && *reinitialize {
+			fmt.Printf("\nRe-initialize database schema... \n")
+			reinit.Reinitialize(schema)
 		}
 	})
 }
 
-func initArgsAndFlags() (*bool, *bool, *bool) {
-	var initialize, upgrade, displayVersion bool
+func initArgsAndFlags() (*bool, *bool, *bool, *bool) {
+	var initialize, reinitialize, upgrade, displayVersion bool
 	var environment string
 	flag.BoolVar(&initialize, "i", false, "Initialize versioning system for database schema")
+	flag.BoolVar(&reinitialize, "I", false, "Delete and create database schema, initialize versioning system and upgrade")
 	flag.BoolVar(&upgrade, "u", false, "Upgrade database schema")
 	flag.BoolVar(&displayVersion, "v", false, "Display database schema version")
 	flag.StringVar(&environment, "host", "localhost", "Database environment (not implemented)")
-	return &initialize, &upgrade, &displayVersion
+	return &initialize, &reinitialize, &upgrade, &displayVersion
 }
 
 func checkParameters() {
