@@ -1,8 +1,10 @@
 package version
 
 import (
+	"db_versioning/db"
 	"fmt"
 	"log"
+	"os"
 	"regexp"
 	"sort"
 	"strconv"
@@ -38,12 +40,13 @@ func DisplayCurrentVersion(schema string) {
 }
 
 func GetCurrentVersion(schema string) string {
-	db := mysql.New("tcp", "", "127.0.0.1:3306", "test", "test", schema)
-	err := db.Connect()
+	connection := mysql.New("tcp", "", fmt.Sprintf("%s:%d", db.Host, 3306), "test", "test", schema)
+	err := connection.Connect()
 	if err != nil {
-		log.Panicf("Connection failed : %s \n", err.Error())
+		fmt.Printf("Connection failed : %s \n", err.Error())
+		os.Exit(1)
 	}
-	versionRow, _, err := db.QueryFirst("select version from db_version where state = 'ok' order by id desc limit 1")
+	versionRow, _, err := connection.QueryFirst("select version from db_version where state = 'ok' order by id desc limit 1")
 	if err != nil {
 		log.Panicf("Query failed : %s \n", err.Error())
 	}

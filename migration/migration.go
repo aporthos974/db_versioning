@@ -33,7 +33,7 @@ func Migrate(schema string) {
 }
 
 func ExecuteQueries(schema string, queries ...string) (results []mysql.Result) {
-	db := openDBConnection("127.0.0.1:3306", "test", "test", schema)
+	db := openDBConnection("test", "test", schema)
 	for _, query := range queries {
 		_, result, err := db.Query(query)
 		if err != nil {
@@ -45,8 +45,8 @@ func ExecuteQueries(schema string, queries ...string) (results []mysql.Result) {
 	return results
 }
 
-func openDBConnection(host string, login string, passwd string, schema string) mysql.Conn {
-	db := mysql.New("tcp", "", host, login, passwd, schema)
+func openDBConnection(login string, passwd string, schema string) mysql.Conn {
+	db := mysql.New("tcp", "", fmt.Sprintf("%s:%d", Host, 3306), login, passwd, schema)
 	err := db.Connect()
 	if err != nil {
 		Fail("Connection failed : %s \n", err.Error())
@@ -55,7 +55,7 @@ func openDBConnection(host string, login string, passwd string, schema string) m
 }
 
 func ExecuteQuery(query string, schema string) ([]mysql.Row, mysql.Result) {
-	db := openDBConnection("127.0.0.1:3306", "test", "test", schema)
+	db := openDBConnection("test", "test", schema)
 	rows, result, err := db.Query(query)
 	db.Close()
 	if err != nil {
@@ -145,7 +145,7 @@ func fetchQueries(scriptPath string) []Query {
 }
 
 func executeScripts(scripts []Script, schema string) {
-	db := openDBConnection("127.0.0.1:3306", "test", "test", schema)
+	db := openDBConnection("test", "test", schema)
 	for _, script := range scripts {
 		transaction, err := db.Begin()
 		if err != nil {

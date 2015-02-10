@@ -7,6 +7,8 @@ import (
 	"strings"
 )
 
+var Host = "127.0.0.1"
+
 type Script struct {
 	Paths, Version string
 	Queries        []Query
